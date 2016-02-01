@@ -94,7 +94,7 @@ my $version = "CC3";
 
 # Obligatory parameters :
 my $oligo_filename = "UNDEFINED";
-my $bigwig_folder = "/t1-data/user/config/bigwig";
+my $bigwig_folder = "/mnt/fastdata/mbp15ja/tmp";
 my $restriction_enzyme_coords_file ="UNDEFINED";#Specifies filename of restriction coordinates (file made by dpngenome2.pl)
 my $genome = "UNDEFINED";
 
@@ -106,7 +106,7 @@ my $public_url = "UNDETERMINED_SERVER/DATA_FOR_PUBLIC_FOLDER";
 my $window = 2000;
 my $increment = 200;
 my $sample = "CaptureC";
-my $use_dump =0; #whether to create an output file with all of the non-aligning sequences
+my $use_dump =1; #whether to create an output file with all of the non-aligning sequences
 my $use_snp=0; #whether to use the SNP specified in the the input file
 my $use_limit=0; #whether to limit the script to analysing the first n lines
 my $globin = 0; #whether to include the part of the script that combines the HbA1 and 2 tracks
@@ -147,7 +147,6 @@ my $notlastFragments=0;
 # The GetOptions from the command line
 &GetOptions
 (
-  	"b=s"=>\ $bigwig_folder, 			# -b		Location of UCSC genome files $genome_sizes.txt		 
 	"f=s"=>\ my $input_filename_path, 		# -f		Input filename 
 	"r=s"=>\ $restriction_enzyme_coords_file,	# -r		Restriction coordinates filename 
 	"o=s"=>\ $oligo_filename,			# -o		Oligonucleotide position filename 
@@ -198,18 +197,6 @@ print STDOUT "genome $genome\n";
 print STDOUT "globin $globin \n"; 
 print STDOUT "stringent $stringent \n";
 
-my $parameter_filename = "parameters_for_filtering.log";
-unless (open(PARAMETERLOG, ">$parameter_filename")){die "Cannot open file $parameter_filename $! , stopped "};
-
-print PARAMETERLOG "public_folder $public_folder \n" ;
-print PARAMETERLOG "input_filename_path $input_filename_path\n";
-print PARAMETERLOG "oligo_filename $oligo_filename\n";
-print PARAMETERLOG "sample $sample\n" ;
-print PARAMETERLOG "restriction_enzyme_coords_file $restriction_enzyme_coords_file \n";
-print PARAMETERLOG "version $version\n";
-print PARAMETERLOG "genome $genome\n";
-print PARAMETERLOG "globin $globin \n";
-
 pod2usage(2) unless ($input_filename_path); 
 
 # Check parameters - fail if obligatory ones not given :
@@ -223,22 +210,18 @@ print STDOUT "Generating output folder.. \n";
 # Creates a folder for the output files to go into - this will be a subdirectory of the file that the script is in
 my $current_directory = cwd;
 my $output_path= "$current_directory/$sample\_$version";
-
-print PARAMETERLOG "datafolder $output_path \n";
-
 if (-d $output_path){}
 else {mkdir $output_path};
 # We don't want to chdir - as otherwise RELATIVE file paths will not work.
 #chdir $output_path;
 
-
-
 # If user did not define public folder - setting public files to be saved in the output folder :
 if ( $public_folder eq "DATA_FOR_PUBLIC_FOLDER" )
 {
-  mkdir "$output_path/DATA_FOR_PUBLIC_FOLDER"; 
+  if (-d $output_path){}
+  else{ mkdir "$output_path/DATA_FOR_PUBLIC_FOLDER" }
   #print STDOUT "\nPublic url and/or public folder location not set - printing visualisation files to output directory $output_path/VISUALISATION_FILES\n";
-  print STDOUT "\nPublic folder location not set - printing visualisation files to output directory $output_path/DATA_FOR_PUBLIC_FOLDER\n";
+  print STDOUT "\nPublic folder location not set - printing visualisation files to output directory $output_path/VISUALISATION_FILES\n";
   $public_folder="$output_path/DATA_FOR_PUBLIC_FOLDER";
 }
 
@@ -251,12 +234,7 @@ if ($input_filename =~ /(.*)\/(\V++)/) {$input_path = $1; $input_filename = $2};
 unless ($input_filename =~ /(.*).sam/) {die"filename does not match .sam, stopped "};
 
 # Creates files for the a report and a fastq file for unaligned sequences to go into
-my $prefix_for_output = $1."_$version";
-print PARAMETERLOG "dataprefix $prefix_for_output \n";
-close PARAMETERLOG ;
-
-my $outputfilename = "$sample\_$version/$prefix_for_output";
-
+my $outputfilename = "$sample\_$version/".$1."_$version"; 
 my $report_filename = "$sample\_$version/".$1."_report_$version.txt";
 my $all_sam_filename = "$sample\_$version/".$1."_all_capture_reads_$version.sam";
 my $all_typed_sam_filename = "$sample\_$version/".$1."_all_typed_reads_$version.sam";
